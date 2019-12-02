@@ -1,0 +1,225 @@
+<html>
+
+<head>
+    <title>ARDUINO YUN - SENSORES</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="css/jquery-ui.css" rel="stylesheet">
+    <link href="css/jquery-ui.structure.min.css" rel="stylesheet">
+    <link href="css/jquery-ui.theme.min.css" rel="stylesheet">
+    <script src="js/jquery-3.4.1.min.js"></script>
+    <script src="js/jquery-ui.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            //$("#divDatos").html("CONSULTANDO AL DISPOSITIVO...<br>Espere");
+            $("#divDatos").html("<center><img src='images/arduino_blink.gif' height='100'><br><br>Conectando<br>al Dispositivo<br>Espere...</center>");
+        });
+        setInterval(consultaAjax, 5000);
+
+        function consultaAjax() {
+            $.ajax({
+                async: true,
+                cache: false,
+                dataType: "html",
+                type: 'POST',
+                //url: "/arduino/sensores/JSON",
+                url: "datos.php",
+                success: function(result) {
+                    $("#divComandos").show();
+                    if ($.trim(result) == "Error al consultar al Arduino YUN!") {
+                        $("#divDatos").html("<center><img src='images/wifi.gif' height='100'><br>PERDIDA DE CONEXION<br>Espere...Reintentando</center>");
+                        $("#divComandos").hide();
+                    } else {
+                        $("#divDatos").html($.trim(result));
+                    }
+                },
+                error: function(error) {
+                    $("#divDatos").html("<center><img src='wifi.gif' height='100'><br>ERROR DE CONEXION<br>Espere...</center>");
+                    $("#divComandos").hide();
+                    console.log("No existe conexi&oacute;n con el Arduino YUN!");
+                }
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <center>
+        <h1 style="margin-bottom:1px">T e l e m e t r &iacute; a</h1>
+        <h3 style="margin-top:1px">[en tiempo real]</h3>
+        <table>
+            <tr>
+                <td style='text-align:center'>
+                    <div id='divDatos' style='text-align:left'>
+                </td>
+            </tr>
+        </table>
+        </div>
+        <br>
+        <div id="divComandos" style='display:none'>
+            <div id='divSegundos'>Encender por: <input type="text" value="1" id="txtSegundos" style="width: 50px" /> segundos</div>
+            <div id="divHuertoFoto" style='text-align:center;display:none'><img id="imgHuerto" src="" height="210"></div>
+            <div id="divHuertoVideo" style='text-align:center;display:none;overflow: hidden;'>
+                <iframe id="iframeVideo" src="" height="290" width="290" alt="video tiempo real" style="border:none;display:none;"></iframe>
+            </div>
+            <br>
+            <button onclick="encenderRiego()" style="margin-top: 20px">Accionar</button>
+            <button onclick="verHuertoFoto()" style="margin-top: 20px">Foto Huerto</button>
+            <button onclick="verHuertoFoto2()" style="margin-top: 20px">Foto Huerto2</button>
+            <button onclick="verHuertoVideo()" style="margin-top: 20px">Video Huerto</button>
+            <button onclick="verHuertoVideo2()" style="margin-top: 20px">Video Huerto2</button>
+        </div>
+    </center>
+    <script type="text/javascript">
+        function encenderRiego() {
+            //alert("/arduino/"+$("#txtSegundos").val()+"&");
+            $.ajax({
+                async: true,
+                cache: false,
+                url: "/arduino/" + $("#txtSegundos").val() + "&"
+            });
+        }
+
+        function verHuertoFoto() {
+            $("#divComandos").hide();
+            $("#imgHuerto").attr("src", "images/loading.gif");
+            $("#divHuertoFoto").dialog({
+                title: "SistRiego - Foto Actual",
+                height: 260,
+                width: 300,
+                modal: true,
+                close: function() {
+                    $("#divComandos").show();
+                }
+            });
+            $.ajax({
+                async: false,
+                cache: false,
+                url: "/arduino/foto",
+                success: function(result) {
+                    console.log($.trim(result));
+                    $("#imgHuerto").attr("src", "imagen.png?ht=" + Math.random());
+                },
+                error: function(error) {
+                    setTimeout(function() {
+                        $("#imgHuerto").attr("src", "imagen.png?ht=" + Math.random()); //do something special 
+                    }, 6500);
+                    //$("#divHuertoFoto").dialog("close");
+                    //alert("Intente nuevamente!");
+                    console.log("Error al obtener la imagen!");
+                }
+            });
+        }
+
+        function verHuertoFoto2() {
+            $("#divComandos").hide();
+            $("#imgHuerto").attr("src", "images/loading.gif");
+            $("#iframeVideo").show();
+            $("#divHuertoFoto").dialog({
+                title: "SistRiego - Foto Actual",
+                height: 260,
+                width: 300,
+                modal: true,
+                close: function() {
+                    $("#divComandos").show();
+                }
+            });
+            $.ajax({
+                async: true,
+                cache: false,
+                url: "utilizarWebCam.php",
+                type: 'POST',
+                data: {
+                    opcion: 1
+                },
+                success: function(result) {
+                    console.log($.trim(result));
+                    $("#imgHuerto").attr("src", "imagen.png?ht=" + Math.random());
+                },
+                error: function(error) {
+                    $("#divHuertoFoto").dialog("close");
+                    alert("Intente nuevamente!");
+                    console.log("Error al obtener la imagen!");
+                }
+            });
+        }
+
+        function verHuertoVideo() {
+            $("#iframeVideo").attr("src", "images/loading.gif");
+            $("#iframeVideo").show();
+            $("#divComandos").hide();
+            $("#divHuertoVideo").dialog({
+                title: "SistRiego - Video en Vivo",
+                height: 300,
+                width: 300,
+                modal: true,
+                close: function(event) {
+                    $("#iframeVideo").attr("src", "");
+                    $("#divComandos").show();
+                    $.ajax({
+                        async: true,
+                        cache: false,
+                        url: "/arduino/apagar_video",
+                    });
+                }
+            });
+            $.ajax({
+                async: true,
+                cache: false,
+                url: "/arduino/iniciar_video",
+                success: function(result) {
+                    $("#iframeVideo").show();
+                    console.log($.trim(result));
+                    $("#iframeVideo").attr("src", "webcam_server.php");
+                    $("#divComandos").show();
+                },
+                error: function(error) {
+                    $("#iframeVideo").attr("src", "webcam_server.php");
+                    console.log("Error enlace Video!");
+                }
+            });
+        }
+
+        function verHuertoVideo2() {
+            $("#iframeVideo").attr("src", "images/loading.gif");
+            $("#iframeVideo").show();
+            $("#divComandos").hide();
+            $("#divHuertoVideo").dialog({
+                title: "SistRiego - Video en Vivo",
+                height: 300,
+                width: 300,
+                modal: true,
+                close: function(event) {
+                    $("#iframeVideo").attr("src", "");
+                    $("#divComandos").show();
+                    $.ajax({
+                        async: true,
+                        cache: false,
+                        url: "/arduino/apagar_video",
+                    });
+                }
+            });
+            $.ajax({
+                async: false,
+                cache: false,
+                url: "utilizarWebCam.php",
+                type: 'POST',
+                data: {
+                    opcion: 2
+                },
+                success: function(result) {
+                    $("#iframeVideo").show();
+                    console.log($.trim(result));
+                    $("#iframeVideo").attr("src", "webcam_server.php");
+                    $("#divComandos").show();
+                },
+                error: function(error) {
+                    $("#iframeVideo").attr("src", "webcam_server.php");
+                    console.log("Error enlace Video!");
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
