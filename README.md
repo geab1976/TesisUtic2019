@@ -16,4 +16,5 @@ a las áreas de tecnología de información y comunicación, aporta conocimiento
 interactuar el hardware y el software con el medio ambiente sin la intervención humana,
 tomando información de la naturaleza mediante sensores y registrando la misma en una base
 de datos, por último apuntar hacia el uso de hardware y software libre.
+
 Palabras clave: área ecológica, riego por goteo, automatización, agua, sensores.
